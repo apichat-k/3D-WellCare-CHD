@@ -1225,7 +1225,7 @@ const LAYOUT = {
   ],
   // ผนังหลังร้าน (x = depth) : [z0, z1, type]
   backWall: [[1.50, 2.15, 'glass'], [2.15, 2.80, 'glass']],
-  door: { z0: 2.98, z1: 3.83, h: 2.10 }   // ประตูอยู่ในระนาบผนัง ใต้หัวตู้สีฟ้า
+  door: { z0: 2.80, z1: 3.70, h: 2.10 }   // ประตูชิดตู้ผนังหลัง สูงถึงใต้หัวตู้สีฟ้า
 };
 
 const SIGN_PHARM = ['พื้นที่ให้คำปรึกษาโดยเภสัชกร', 'Pharmacist Service Area'];
@@ -1333,7 +1333,7 @@ const M = {
   stair:  new THREE.MeshStandardMaterial({ color: 0x9a9d9f, roughness: .9, side: THREE.DoubleSide }),
   red:    new THREE.MeshStandardMaterial({ color: 0xd8262b, roughness: .35 }),
   black:  new THREE.MeshStandardMaterial({ color: 0x222222, roughness: .5 }),
-  door:   new THREE.MeshStandardMaterial({ color: 0x2f8496, roughness: .08, metalness: .1, transparent: true, opacity: .78 }),
+  door:   new THREE.MeshStandardMaterial({ color: 0x4fb8d2, roughness: .15, metalness: .05 }),
   alu:    new THREE.MeshStandardMaterial({ color: 0x8b9196, roughness: .35, metalness: .5 }),
   steel:  new THREE.MeshStandardMaterial({ color: 0xcfd4d8, metalness: .6, roughness: .3 }),
 };
@@ -1541,21 +1541,16 @@ B(signE, RX - shelf.depth, shelf.height, LAYOUT.stair.width, RX, RH, RZ, M.wood)
 const hdrE = item('หัวตู้สีฟ้าเหนือประตู', 'แถบสีฟ้าต่อจากหัวตู้ชั้นวาง คลุมเหนือประตูถึงมุมผนัง', 'ผนังหลัง');
 B(hdrE, RX - shelf.depth, LAYOUT.door.h, D1, RX, shelf.height, RZ, M.white);
 B(hdrE, RX - shelf.depth, shelf.height - 0.20, D1, RX - shelf.depth + 0.02, shelf.height, RZ, M.cyan);
-const door = item('ประตูกระจก', 'ประตูกระจกเทาเขียว กรอบอลูมิเนียม อยู่ในระนาบผนังหลัง', 'ผนังหลัง');
+const door = item('ประตูกระจก', 'ประตูกระจกสีฟ้า วงกบสีขาว ชิดตู้ชั้นวาง สูงถึงใต้หัวตู้สีฟ้า', 'ผนังหลัง');
 (() => {
-  const d = LAYOUT.door, f = 0.05, t = 0.05;
-  B(door, RX - t, 0, d.z0, RX, d.h, d.z0 + f, M.alu);            // วงกบซ้าย
-  B(door, RX - t, 0, d.z1 - f, RX, d.h, d.z1, M.alu);            // วงกบขวา
-  B(door, RX - t, d.h - f, d.z0, RX, d.h, d.z1, M.alu);          // วงกบบน
-  B(door, RX - t, 0, d.z0 + f, RX, 0.08, d.z1 - f, M.alu);       // ธรณีล่าง
-  B(door, RX - 0.03, 0.08, d.z0 + f, RX - 0.015, d.h - f, d.z1 - f, M.door);
-  const hd = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.40, 10), M.steel);
-  hd.position.set(RX - 0.08, 1.05, d.z1 - 0.12); door.add(hd);
-  [0.86, 1.24].forEach(y => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.05, 8), M.steel);
-    b.rotation.z = Math.PI / 2; b.position.set(RX - 0.05, y, d.z1 - 0.12); door.add(b); });
+  const d = LAYOUT.door, t = 0.05;           // วงกบยื่นจากผนัง 5 ซม.
+  const jl = 0.05, jr = 0.09, hd = 0.05, sl = 0.05;   // ความกว้างวงกบ ซ้าย/ขวา/บน/ธรณี
+  B(door, RX - t, 0, d.z0, RX, d.h, d.z0 + jl, M.white);            // วงกบซ้าย (ติดตู้)
+  B(door, RX - t, 0, d.z1 - jr, RX, d.h, d.z1, M.white);            // วงกบขวา (กว้างกว่า)
+  B(door, RX - t, d.h - hd, d.z0, RX, d.h, d.z1, M.white);          // วงกบบน ชนหัวตู้สีฟ้า
+  B(door, RX - t, 0, d.z0 + jl, RX, sl, d.z1 - jr, M.white);        // ธรณีประตู
+  B(door, RX - 0.025, sl, d.z0 + jl, RX - 0.015, d.h - hd, d.z1 - jr, M.door);  // บานกระจก (ร่นเข้าในวงกบ)
 })();
-// ผนังช่วงระหว่างตู้กับประตู
-B(wallE, RX - 0.01, 0, D1, RX, LAYOUT.door.h, LAYOUT.door.z0, M.wall, { edges: false });
 
 /* ---------------- เคาน์เตอร์ ---------------- */
 const CH = LAYOUT.counterH;
