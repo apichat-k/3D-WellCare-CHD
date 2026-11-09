@@ -1577,30 +1577,57 @@ const curve = item('ชั้นวางโค้งหัวมุม', 'ช�
 })();
 
 // เคาน์เตอร์แคชเชียร์
-const cash = item('เคาน์เตอร์แคชเชียร์', 'เคาน์เตอร์ชำระเงิน พร้อมเครื่อง POS และชั้นวางขั้นบันได', 'เคาน์เตอร์');
+const cash = item('เคาน์เตอร์แคชเชียร์', 'เคาน์เตอร์ชำระเงิน มุมหน้าโค้ง พร้อมป้าย CASHIER ไม้และเครื่อง POS', 'เคาน์เตอร์');
+const CASH = { x0: 2.21, x1: 3.08, z0: 1.51, z1: 2.16, h: 1.05, r: 0.18 };
+// แผ่นทรงสี่เหลี่ยมมุมหน้าขวาโค้ง (มองจากด้านบน) สูงจาก y0 ถึง y1
+function roundSlab(parent, x0, x1, z0, z1, r, y0, y1, mat) {
+  const sh = new THREE.Shape();
+  sh.moveTo(x0, z0); sh.lineTo(x1, z0); sh.lineTo(x1, z1 - r);
+  sh.absarc(x1 - r, z1 - r, r, 0, Math.PI / 2, false);
+  sh.lineTo(x0, z1); sh.lineTo(x0, z0);
+  const g = new THREE.ExtrudeGeometry(sh, { depth: y1 - y0, bevelEnabled: false, curveSegments: 16 });
+  const m = new THREE.Mesh(g, mat);
+  m.rotation.x = Math.PI / 2; m.position.y = y1;          // shape (x,y) -> world (x,z), extrude ลงด้านล่าง
+  m.castShadow = true; m.receiveShadow = true; addEdges(m); parent.add(m); return m;
+}
 (() => {
-  const x0 = 2.21, x1 = 3.08, z0 = 1.51, z1 = 2.16, h = 1.05;
-  B(cash, x0, 0, z0, x1, 0.10, z1, M.cyan);
-  B(cash, x0, 0.10, z0, x1, h - 0.03, z1, M.white);
-  B(cash, x0 - 0.01, h - 0.03, z0, x1 + 0.01, h, z1 + 0.02, M.grey);
+  const { x0, x1, z0, z1, h, r } = CASH;
+  roundSlab(cash, x0, x1, z0, z1, r, 0, 0.10, M.cyan);
+  roundSlab(cash, x0, x1, z0, z1, r, 0.10, h - 0.03, M.white);
+  roundSlab(cash, x0 - 0.01, x1 + 0.01, z0, z1 + 0.03, r + 0.03, h - 0.03, h, M.grey);
   // POS
   B(cash, 2.55, h, 1.58, 2.85, h + 0.08, 1.80, M.black);
   const scr = B(cash, 2.62, h + 0.08, 1.62, 2.80, h + 0.26, 1.64, M.black);
   scr.rotation.x = -0.2;
-  // ป้าย CASHIER
-  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.16),
-    new THREE.MeshStandardMaterial({ map: signTex(SIGN_CASH, { w: 800, h: 300, s1: 105, s2: 95 }), roughness: .7, side: THREE.DoubleSide }));
-  plaque.position.set(2.45, h + 0.10, z1 + 0.005); plaque.rotation.x = -0.15; cash.add(plaque);
-  B(cash, 2.24, h, z1 - 0.02, 2.66, h + 0.02, z1 + 0.01, M.wood);
-  // ชั้นขั้นบันได (สินค้าหน้าเคาน์เตอร์)
-  const steps = [[0.92, 0.12], [0.70, 0.24], [0.48, 0.36], [0.26, 0.48]];
-  steps.forEach(([y, d]) => {
-    B(cash, 2.30, y, z1, 3.00, y + 0.02, z1 + d, M.shelf);
-    B(cash, 2.30, y + 0.02, z1 + d - 0.012, 3.00, y + 0.08, z1 + d, M.glass);
-    B(cash, 2.30, y - 0.03, z1 + d - 0.012, 3.00, y, z1 + d, M.cyan);
+  // ป้ายไม้ "จุดชำระเงิน / CASHIER" ติดหน้าเคาน์เตอร์ มุมบนขวาโค้ง
+  const pw = 0.58, ph = 0.17, W = 1160, H = 340, rr = 150;
+  const tex = canvasTex(W, H, (g) => {
+    g.save(); g.beginPath();
+    g.moveTo(0, 0); g.lineTo(W - rr, 0); g.quadraticCurveTo(W, 0, W, rr); g.lineTo(W, H); g.lineTo(0, H); g.closePath(); g.clip();
+    drawWood(g, W, H);
+    g.fillStyle = '#111'; g.textAlign = 'left'; g.textBaseline = 'middle';
+    const f = 'Sarabun,"Noto Sans Thai",Tahoma,sans-serif';
+    g.font = `700 120px ${f}`; g.fillText(SIGN_CASH[0], 40, H * 0.30);
+    g.font = `700 115px ${f}`; g.fillText(SIGN_CASH[1], 40, H * 0.72);
+    g.restore();
   });
-  B(cash, 2.28, 0.1, z1, 2.30, 0.95, z1 + 0.48, M.white);
-  B(cash, 3.00, 0.1, z1, 3.02, 0.95, z1 + 0.48, M.white);
+  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph),
+    new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.5, roughness: .7 }));
+  plaque.position.set(x0 + 0.03 + pw / 2, h - 0.04 - ph / 2, z1 + 0.012); cash.add(plaque);
+  B(cash, x0 + 0.03, h - 0.04 - ph, z1, x0 + 0.03 + pw - 0.08, h - 0.04, z1 + 0.01, M.wood, { edges: false });
+})();
+
+// ชั้นวางสินค้าหน้าเคาน์เตอร์แคชเชียร์: 4 ชั้นยื่นตรง ขอบกันตกสีฟ้า
+const tray = item('ชั้นวางหน้าแคชเชียร์', 'ชั้นยื่นจากหน้าเคาน์เตอร์ 4 ชั้น ระยะยื่นเท่ากัน มีขอบกันตกสีฟ้าด้านหน้าและด้านข้าง', 'เคาน์เตอร์');
+(() => {
+  const { z1 } = CASH, tx0 = 2.25, tx1 = 2.86, d = 0.24, lip = 0.045, lt = 0.012;
+  [0.76, 0.54, 0.32, 0.10].forEach(y => {
+    B(tray, tx0, y - 0.025, z1, tx1, y, z1 + d, M.white);                    // แผ่นรองขาว
+    B(tray, tx0 + lt, y, z1, tx1 - lt, y + 0.004, z1 + d - lt, M.grey, { edges: false }); // ผิวบนสีเทา
+    B(tray, tx0, y, z1 + d - lt, tx1, y + lip, z1 + d, M.cyan);              // ขอบหน้า
+    B(tray, tx0, y, z1, tx0 + lt, y + lip, z1 + d - lt, M.cyan);             // ขอบข้างซ้าย
+    B(tray, tx1 - lt, y, z1, tx1, y + lip, z1 + d - lt, M.cyan);             // ขอบข้างขวา
+  });
 })();
 
 // ตู้กระจกเคาน์เตอร์ (ฝั่งลูกค้า)
