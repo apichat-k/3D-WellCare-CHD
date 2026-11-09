@@ -1207,7 +1207,7 @@
    ===================================================================== */
 const LAYOUT = {
   room: { depth: 7.0, width: 4.0, height: 3.0, wallT: 0.15 },
-  shelf: { depth: 0.42, height: 2.3 },
+  shelf: { depth: 0.30, height: 2.3 },   // ตู้ติดผนังลึก 30 ซม.
   counterH: 1.0,
   stair: { x0: 3.9, width: 1.45, lowY: 2.15 },
   // ผนังเภสัชกร (z = 0) : [x0, x1, type, height]
@@ -1220,12 +1220,12 @@ const LAYOUT = {
   selfWall: [
     [0.20, 0.84, 'glass'], [0.84, 1.48, 'glass'], [1.48, 2.12, 'glass'],
     [2.12, 2.76, 'glass'], [2.76, 3.40, 'glass'],
-    [3.95, 4.51, 'cubby'], [4.51, 5.07, 'cubby'], [5.07, 5.63, 'cubby'],
-    [5.63, 6.19, 'cubby'], [6.19, 6.75, 'cubby']
+    [3.95, 4.50, 'cubby'], [4.50, 5.04, 'cubby'], [5.04, 5.59, 'cubby'],
+    [5.59, 6.13, 'cubby'], [6.13, 6.68, 'cubby']
   ],
   // ผนังหลังร้าน (x = depth) : [z0, z1, type]
-  backWall: [[1.55, 2.17, 'glass'], [2.17, 2.79, 'glass']],
-  door: { z0: 2.88, z1: 3.62, h: 2.45 }
+  backWall: [[1.50, 2.15, 'glass'], [2.15, 2.80, 'glass']],
+  door: { z0: 2.98, z1: 3.83, h: 2.10 }   // ประตูอยู่ในระนาบผนัง ใต้หัวตู้สีฟ้า
 };
 
 const SIGN_PHARM = ['พื้นที่ให้คำปรึกษาโดยเภสัชกร', 'Pharmacist Service Area'];
@@ -1333,7 +1333,8 @@ const M = {
   stair:  new THREE.MeshStandardMaterial({ color: 0x9a9d9f, roughness: .9, side: THREE.DoubleSide }),
   red:    new THREE.MeshStandardMaterial({ color: 0xd8262b, roughness: .35 }),
   black:  new THREE.MeshStandardMaterial({ color: 0x222222, roughness: .5 }),
-  door:   new THREE.MeshStandardMaterial({ color: 0x4fb3d6, roughness: .1, transparent: true, opacity: .75 }),
+  door:   new THREE.MeshStandardMaterial({ color: 0x2f8496, roughness: .08, metalness: .1, transparent: true, opacity: .78 }),
+  alu:    new THREE.MeshStandardMaterial({ color: 0x8b9196, roughness: .35, metalness: .5 }),
   steel:  new THREE.MeshStandardMaterial({ color: 0xcfd4d8, metalness: .6, roughness: .3 }),
 };
 const edgeMat = new THREE.LineBasicMaterial({ color: 0x1b2328, transparent: true, opacity: .55 });
@@ -1452,11 +1453,12 @@ B(wallS, -0.2, 0, RZ, RX + T, RH, RZ + T, M.wall);
 B(wallE, RX, 0, 0, RX + T, RH, RZ, M.wall);
 // เสาหน้าร้าน
 const pil = item('เสาหน้าร้าน + ถังดับเพลิง', 'เสาด้านหน้าฝั่งเภสัชกร ติดตั้งถังดับเพลิง', 'โครงสร้าง');
-B(pil, -0.2, 0, 0, 0.30, RH, 0.45, M.wall);
-B(wallS, -0.2, 0, RZ - 0.45, 0.20, RH, RZ, M.wall);
+const PIL = shelf.depth + 0.05;
+B(pil, -0.2, 0, 0, 0.30, RH, PIL, M.wall);
+B(wallS, -0.2, 0, RZ - PIL, 0.20, RH, RZ, M.wall);
 // ถังดับเพลิง
 (() => {
-  const ex = new THREE.Group(); ex.position.set(0.12, 0, 0.45 + 0.09); pil.add(ex);
+  const ex = new THREE.Group(); ex.position.set(0.12, 0, PIL + 0.09); pil.add(ex);
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.48, 24), M.red);
   body.position.y = 0.88; body.castShadow = true; ex.add(body);
   const cap = new THREE.Mesh(new THREE.SphereGeometry(0.075, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), M.red);
@@ -1499,11 +1501,11 @@ const colN = item('เสาผนัง', 'เสาระหว่างชั
 B(colN, 3.60, 0, 0, 3.85, RH, shelf.depth, M.wall);
 // ป้ายไม้
 const signN = item('ป้าย Pharmacist Service Area', 'แผงไม้ลายธรรมชาติพร้อมตัวอักษร', 'Pharmacist Service Area');
-B(signN, 0.30, shelf.height, 0, LAYOUT.stair.x0, RH, 0.03, M.wood);
+B(signN, 0.30, shelf.height, 0, LAYOUT.stair.x0, RH, shelf.depth, M.wood);   // ฝ้าไม้ยื่นเสมอหน้าตู้
 (() => {
   const w = LAYOUT.stair.x0 - 0.3, h = RH - shelf.height;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: signTex(SIGN_PHARM, { w: 2400, h: 460, s1: 150, s2: 120 }), roughness: .7 }));
-  m.position.set(0.3 + w / 2, shelf.height + h / 2, 0.032); signN.add(m);
+  m.position.set(0.3 + w / 2, shelf.height + h / 2, shelf.depth + 0.003); signN.add(m);
 })();
 
 /* ---------------- ผนังบริการตนเอง ---------------- */
@@ -1515,13 +1517,13 @@ LAYOUT.selfWall.forEach((b, i) => {
   shelfBay(g, x1 - x0, shelf.height, shelf.depth, type);
 });
 const colS = item('เสาบุไม้', 'เสาตกแต่งลายไม้กลางผนังบริการตนเอง', 'Self Service Area');
-B(colS, 3.40, 0, RZ - 0.45, 3.95, shelf.height, RZ, M.wood);
+B(colS, 3.40, 0, RZ - shelf.depth - 0.06, 3.95, shelf.height, RZ, M.wood);
 const signS = item('ป้าย Self Service Area', 'แผงไม้ลายธรรมชาติพร้อมตัวอักษร', 'Self Service Area');
-B(signS, 0.2, shelf.height, RZ - 0.03, RX, RH, RZ, M.wood);
+B(signS, 0.2, shelf.height, RZ - shelf.depth, RX - shelf.depth, RH, RZ, M.wood);
 (() => {
   const w = 3.0, h = RH - shelf.height;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: signTex(SIGN_SELF, { w: 2000, h: 460, s1: 150, s2: 120 }), transparent: false, roughness: .7 }));
-  m.position.set(3.675, shelf.height + h / 2, RZ - 0.032); m.rotation.y = Math.PI; signS.add(m);
+  m.position.set(3.675, shelf.height + h / 2, RZ - shelf.depth - 0.003); m.rotation.y = Math.PI; signS.add(m);
 })();
 
 /* ---------------- ผนังหลัง ---------------- */
@@ -1531,18 +1533,29 @@ LAYOUT.backWall.forEach((b, i) => {
   placeOnWall(g, 'E', z0, z1);
   shelfBay(g, z1 - z0, shelf.height, shelf.depth, type);
 });
-const signE = item('แผงไม้ผนังหลัง', 'แผงไม้เหนือชั้นวางผนังหลัง', 'ผนังหลัง');
-B(signE, RX - 0.03, shelf.height, LAYOUT.stair.width, RX, RH, 2.82, M.wood);
-const door = item('ประตูกระจก', 'ประตู/ช่องกระจกสีฟ้า ด้านหลังร้าน', 'ผนังหลัง');
+const D0 = LAYOUT.backWall[0][0], D1 = LAYOUT.backWall[LAYOUT.backWall.length - 1][1];
+// ฝ้าไม้ยาวต่อเนื่องตลอดผนังหลัง (จากขอบบันไดถึงผนังบริการตนเอง)
+const signE = item('ฝ้าไม้ผนังหลัง', 'ฝ้าไม้ยื่นเสมอหน้าตู้ ยาวต่อเนื่องคลุมทั้งตู้และประตู', 'ผนังหลัง');
+B(signE, RX - shelf.depth, shelf.height, LAYOUT.stair.width, RX, RH, RZ, M.wood);
+// หัวตู้สีฟ้าต่อเนื่องเหนือประตู
+const hdrE = item('หัวตู้สีฟ้าเหนือประตู', 'แถบสีฟ้าต่อจากหัวตู้ชั้นวาง คลุมเหนือประตูถึงมุมผนัง', 'ผนังหลัง');
+B(hdrE, RX - shelf.depth, LAYOUT.door.h, D1, RX, shelf.height, RZ, M.white);
+B(hdrE, RX - shelf.depth, shelf.height - 0.20, D1, RX - shelf.depth + 0.02, shelf.height, RZ, M.cyan);
+const door = item('ประตูกระจก', 'ประตูกระจกเทาเขียว กรอบอลูมิเนียม อยู่ในระนาบผนังหลัง', 'ผนังหลัง');
 (() => {
-  const d = LAYOUT.door;
-  B(door, RX - 0.06, 0, d.z0, RX, d.h, d.z0 + 0.04, M.white);
-  B(door, RX - 0.06, 0, d.z1 - 0.04, RX, d.h, d.z1, M.white);
-  B(door, RX - 0.06, d.h - 0.04, d.z0, RX, d.h, d.z1, M.white);
-  B(door, RX - 0.03, 0, d.z0 + 0.04, RX - 0.01, d.h - 0.04, d.z1 - 0.04, M.door);
-  const hd = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.35, 10), M.steel);
-  hd.position.set(RX - 0.07, 1.05, d.z0 + 0.12); door.add(hd);
+  const d = LAYOUT.door, f = 0.05, t = 0.05;
+  B(door, RX - t, 0, d.z0, RX, d.h, d.z0 + f, M.alu);            // วงกบซ้าย
+  B(door, RX - t, 0, d.z1 - f, RX, d.h, d.z1, M.alu);            // วงกบขวา
+  B(door, RX - t, d.h - f, d.z0, RX, d.h, d.z1, M.alu);          // วงกบบน
+  B(door, RX - t, 0, d.z0 + f, RX, 0.08, d.z1 - f, M.alu);       // ธรณีล่าง
+  B(door, RX - 0.03, 0.08, d.z0 + f, RX - 0.015, d.h - f, d.z1 - f, M.door);
+  const hd = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.40, 10), M.steel);
+  hd.position.set(RX - 0.08, 1.05, d.z1 - 0.12); door.add(hd);
+  [0.86, 1.24].forEach(y => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.05, 8), M.steel);
+    b.rotation.z = Math.PI / 2; b.position.set(RX - 0.05, y, d.z1 - 0.12); door.add(b); });
 })();
+// ผนังช่วงระหว่างตู้กับประตู
+B(wallE, RX - 0.01, 0, D1, RX, LAYOUT.door.h, LAYOUT.door.z0, M.wall, { edges: false });
 
 /* ---------------- เคาน์เตอร์ ---------------- */
 const CH = LAYOUT.counterH;
